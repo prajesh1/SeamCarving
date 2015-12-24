@@ -4,20 +4,25 @@ import edu.princeton.cs.algs4.Picture;
 
 public class SeamCarver { 
   private Picture picture;
-  private double score;
-  private int[] seam;
-  public double[][] energyArray;
-  public int[][] pathArray;
+  private double[][] energyArray;
+  private int[][] pathArray;
   private boolean originalPicture = true;
   
   //create a seam carver object based on the given picture
   public SeamCarver(Picture picture) {
-    this.picture = picture;
+    if(picture == null)
+      throw new java.lang.NullPointerException();
+    this.picture = new Picture(picture);
   }
   
   //current picture
   public Picture picture() {
-    return this.picture;   
+    if(!originalPicture)  
+    {
+    transpose();
+    originalPicture = true;
+    }
+    return new Picture(this.picture);   
   }
   
   // width of current picture
@@ -32,8 +37,12 @@ public class SeamCarver {
   
   //energy of pixel at column x and row y
   public  double energy(int x, int y) {
-    if(x == 0 || y == 0 || x == this.picture.width()-1 || y == this.picture.height()-1)
+    if(x == 0 || y == 0 || x == this.picture.width()-1 || y == this.picture.height()-1) {
       return 1000;
+    }
+    if(x < 0 || y < 0 || x >= this.picture.width() || y >= this.picture.height())
+      throw new java.lang.IndexOutOfBoundsException();
+    
     double xGradient = Math.pow(centralXDifference(x,y,'R'),2) 
                    + Math.pow(centralXDifference(x,y,'G'),2)
                    + Math.pow(centralXDifference(x,y,'B'),2);
@@ -52,6 +61,8 @@ public class SeamCarver {
             return this.picture.get(x+1, y).getBlue() -this.picture.get(x-1, y).getBlue();
         case 'G':
             return this.picture.get(x+1, y).getGreen() -this.picture.get(x-1, y).getGreen();
+        default:
+          break;
         }
         return 0;
     }
@@ -64,52 +75,57 @@ public class SeamCarver {
                 return this.picture.get(x, y+1).getBlue() -this.picture.get(x, y-1).getBlue();
             case 'G':
                 return this.picture.get(x, y+1).getGreen() -this.picture.get(x, y-1).getGreen();
+            default:
+              break;
             }
             return 0;
         }
     public   int[] findHorizontalSeam()               // sequence of indices for horizontal seam
     {
       if(originalPicture)  
-        {
-        transpose();
-        originalPicture = false;
-        }
+      {
+      transpose();
+      originalPicture = false;
+      }
       
-       return findSeam();
-        
-   
-       
+      return findSeam();
+    
     }
     
     private void transpose()
     {
         Picture p = new Picture(this.picture.height(), this.picture.width());
         
-        for(int i=0;i<this.picture.height();i++)
-            for(int j=0;j<this.picture.width();j++)
-                p.set(i, j, this.picture.get(j, i));
+        for(int i=0;i<this.picture.height();i++) {
+          for(int j=0;j<this.picture.width();j++)
+              p.set(i, j, this.picture.get(j, i));
+        }
         
         this.picture = p;
     }
   // sequence of indices for vertical seam 
   public   int[] findVerticalSeam() {
-  if(!originalPicture) {
-      transpose();
-      originalPicture = true;
+    if(!originalPicture)  
+    {
+    transpose();
+    originalPicture = true;
     }
- 
+  
     return findSeam();
    
     }
   private int[] findSeam() {
     energyArray = new double[this.width()][this.height()];
     pathArray = new int[this.width()][this.height()];
-    for(int i=0;i<this.width();i++) 
+    for(int i=0;i<this.width();i++) {
       for(int j=0;j<this.height();j++)
         energyArray[i][j] = Double.POSITIVE_INFINITY;
+    }
      
-    for(int i=0;i<this.width();i++) 
+    for(int i=0;i<this.width();i++)
+     {
       energyArray[i][0] = this.energy(i, 0); // Assigns first row = 1000
+    }
     
    fillEnergyMatrixDynamically();    
    int minColumnPosition = findMinScorePosition();
@@ -143,7 +159,7 @@ public class SeamCarver {
     return seam;
   }
     private void fillEnergyMatrixDynamically() {
-      for(int i=0;i<this.picture.height()-1;i++)
+      for(int i=0;i<this.picture.height()-1;i++) {
         for(int j=0;j<this.picture.width();j++)
           {
             if(updateScore(j-1,i+1,energyArray[j][i]))
@@ -153,6 +169,7 @@ public class SeamCarver {
             if(updateScore(j+1,i+1,energyArray[j][i]))
               pathArray[j+1][i+1]=j;
           }
+      }
     }
     
     private boolean updateScore(int i,int j,double score)
@@ -170,33 +187,56 @@ public class SeamCarver {
     
     public    void removeHorizontalSeam(int[] seam)   // remove horizontal seam from current picture
     {
+      if(invalidSeam(seam))
+        throw new java.lang.IllegalArgumentException();
       if(originalPicture)  
       {
-      transpose();originalPicture = false;
+      transpose();
+      originalPicture = false;
       }
-    
+      removeSeam(seam);
        
+    }
+    private boolean invalidSeam(int[] seam)
+    {
+      if(seam.length!=this.height())
+        throw new java.lang.IllegalArgumentException();
+      if(seam==null)
+        throw new java.lang.NullPointerException();
+      for(int i=1;i<seam.length;i++)
+        if(Math.abs(seam[i-1]-seam[i])>1)
+          return true;
+      return false;
     }
      public    void removeVerticalSeam(int[] seam)     // remove vertical seam from current picture
      {
+       if(invalidSeam(seam))
+         throw new java.lang.IllegalArgumentException();
+       
        if(!originalPicture)  
        {
-       transpose();originalPicture = true;
+       transpose();
+       originalPicture = true;
        }
-         Picture p = new Picture(this.picture.width()-1,this.picture.height());
-         for(int j=0;j<this.picture.height();j++)
-         {
-             for(int i=0,k=0;i<this.picture.width();i++)
-                { 
-                 if(i!=seam[j])
-                 {
-                    
-                     p.set(k, j, this.picture.get(i, j)); k++;
-                     
-                 }
-                }
-         }
-         this.picture = p;
+        removeSeam(seam);
+     }
+     
+     private void removeSeam(int[] seam)
+     {
+       Picture p = new Picture(this.picture.width()-1,this.picture.height());
+       for(int j=0;j<this.picture.height();j++)
+       {
+           for(int i=0,k=0;i<this.picture.width();i++)
+              { 
+               if(i!=seam[j])
+               {
+                  
+                   p.set(k, j, this.picture.get(i, j)); k++;
+                   
+               }
+              }
+       }
+       this.picture = p;
      }
      public static void main(String[] args)
        {
