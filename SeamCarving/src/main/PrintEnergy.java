@@ -23,10 +23,10 @@ public class PrintEnergy {
         SeamCarver sc = new SeamCarver(picture);
         
         StdOut.printf("Printing energy calculated for each pixel.\n");        
-
+        System.out.println(sc.height());
         for (int j = 0; j < sc.height(); j++) {
             for (int i = 0; i < sc.width(); i++)
-                StdOut.printf("%.2f ", sc.energy(i, j));
+                StdOut.printf("%.2f ", sc.energy(-1, j));
             StdOut.println();
         }
     }
