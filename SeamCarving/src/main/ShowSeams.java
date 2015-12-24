@@ -31,7 +31,7 @@ public class ShowSeams {
         int[] verticalSeam = sc.findVerticalSeam();
         for(int i=0;i<verticalSeam.length;i++)
         System.out.println(verticalSeam[i]);
-        Picture overlay = SCUtility.seamOverlay(picture, false, verticalSeam);
+       // Picture overlay = SCUtility.seamOverlay(picture, false, verticalSeam);
        // overlay.show();
     }
 
@@ -46,6 +46,19 @@ public class ShowSeams {
 
         StdOut.printf("Displaying vertical seam calculated.\n");
         showVerticalSeam(sc);
+        
+       /* for (int j = 0; j < sc.height(); j++) {
+          for (int i = 0; i < sc.width(); i++)
+              StdOut.printf("%.2f ", sc.energyArray[i][j]);
+          StdOut.println();
+        }
+        System.out.println("Value is" +sc.energyArray[0][sc.height()-1]);
+       
+          for (int j = 0; j < sc.height(); j++) {
+            for (int i = 0; i < sc.width(); i++)
+                StdOut.printf("%d ", sc.pathArray[i][j]);
+            StdOut.println();
+        }*/
 
     }
 

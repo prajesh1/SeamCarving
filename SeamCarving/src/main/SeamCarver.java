@@ -6,7 +6,8 @@ public class SeamCarver {
   private Picture picture;
   private double score;
   private int[] seam;
-  private double[][] energyArray;
+  public double[][] energyArray;
+  public int[][] pathArray;
   private boolean originalPicture = true;
   
   //create a seam carver object based on the given picture
@@ -70,13 +71,14 @@ public class SeamCarver {
     {
       if(originalPicture)  
         {
-        transpose();originalPicture = false;
+        transpose();
+        originalPicture = false;
         }
       
-        seam = this.findVerticalSeam();
+       return findSeam();
         
    
-        return seam;
+       
     }
     
     private void transpose()
@@ -89,54 +91,83 @@ public class SeamCarver {
         
         this.picture = p;
     }
+  // sequence of indices for vertical seam 
+  public   int[] findVerticalSeam() {
+  if(!originalPicture) {
+      transpose();
+      originalPicture = true;
+    }
+ 
+    return findSeam();
+   
+    }
+  private int[] findSeam() {
+    energyArray = new double[this.width()][this.height()];
+    pathArray = new int[this.width()][this.height()];
+    for(int i=0;i<this.width();i++) 
+      for(int j=0;j<this.height();j++)
+        energyArray[i][j] = Double.POSITIVE_INFINITY;
+     
+    for(int i=0;i<this.width();i++) 
+      energyArray[i][0] = this.energy(i, 0); // Assigns first row = 1000
     
-
-    public   int[] findVerticalSeam()                 // sequence of indices for vertical seam
+   fillEnergyMatrixDynamically();    
+   int minColumnPosition = findMinScorePosition();
+   return seamPath(minColumnPosition);
+  }
+  private int findMinScorePosition()
+  {
+    int pos = 0;
+    double minVal = energyArray[0][this.picture.height()-1];
+    for(int i=1;i<this.picture.width()-1;i++)
     {
-      if(!originalPicture)  
+      if(minVal>energyArray[i][this.picture.height()-1])
       {
-      transpose();originalPicture = true;
+        minVal = energyArray[i][this.picture.height()-1];
+        pos = i;
       }
-        energyArray = new double[this.width()][this.height()];
-        for(int i=0;i<this.width();i++)
-        {
-            for(int j=0;j<this.height();j++)
-                energyArray[i][j] = this.energy(i,j);
-        }
-        
-        this.score = 1000*this.picture.height();
-        this.seam = new int[this.height()];
-        int[] seam = new int[this.height()];
-        for(int i=0;i<this.width();i++)
-        {
-            DFS(i,0,0,seam);            
-        }
-        
-        return this.seam;
-        
     }
-
+    return pos;
+  }
+  private int[] seamPath(int pos)
+  {
+    int[] seam = new int[this.picture.height()];
+    int j = this.picture.height()-1;
     
-    private void DFS(int x, int y, double score, int[] seam)
+    while(j>=0)
     {
-        score = score + energyArray[x][y];
-        seam[y] =x;
-        
-        if(score < this.score)
-        {
-            if(y == this.height()-1)
-                {
-                    this.seam = seam.clone();
-                    this.score = score;
-                    return;
-                }
-           
-        
-        if(x-1>=0) DFS(x-1,y+1,score,seam);
-        DFS(x,y+1,score,seam);
-        if(x+1<this.width()) DFS(x+1,y+1,score,seam);
-        }
+      seam[j]=pos;
+      pos = pathArray[pos][j];
+      j = j-1;
     }
+    return seam;
+  }
+    private void fillEnergyMatrixDynamically() {
+      for(int i=0;i<this.picture.height()-1;i++)
+        for(int j=0;j<this.picture.width();j++)
+          {
+            if(updateScore(j-1,i+1,energyArray[j][i]))
+              pathArray[j-1][i+1]=j;
+            if(updateScore(j,i+1,energyArray[j][i]))
+              pathArray[j][i+1]=j;
+            if(updateScore(j+1,i+1,energyArray[j][i]))
+              pathArray[j+1][i+1]=j;
+          }
+    }
+    
+    private boolean updateScore(int i,int j,double score)
+    {
+      if(i>-1 && i< this.picture.width())
+      {
+        if(energyArray[i][j]>score+this.energy(i, j))
+           {
+            energyArray[i][j]=score+this.energy(i, j);
+            return true;
+           }
+      }
+      return false;
+    }
+    
     public    void removeHorizontalSeam(int[] seam)   // remove horizontal seam from current picture
     {
       if(originalPicture)  
