@@ -26,7 +26,7 @@ public class PrintEnergy {
         System.out.println(sc.height());
         for (int j = 0; j < sc.height(); j++) {
             for (int i = 0; i < sc.width(); i++)
-                StdOut.printf("%.2f ", sc.energy(-1, j));
+                StdOut.printf("("+i+","+j+")"+sc.energy(i, j));
             StdOut.println();
         }
     }

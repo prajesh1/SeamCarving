@@ -1,5 +1,3 @@
-
-
 /******************************************************************************
  *  Compilation:  javac ShowSeams.java
  *  Execution:    java ShowSeams input.png
@@ -18,21 +16,17 @@ public class ShowSeams {
 
     private static void showHorizontalSeam(SeamCarver sc) {
         Picture picture = SCUtility.toEnergyPicture(sc);
-       int[] horizontalSeam = sc.findHorizontalSeam();
-       for(int i=0;i<horizontalSeam.length;i++)
-           System.out.println(horizontalSeam[i]);
+        int[] horizontalSeam = sc.findHorizontalSeam();
         Picture overlay = SCUtility.seamOverlay(picture, true, horizontalSeam);
-        //overlay.show();
+        overlay.show();
     }
 
 
     private static void showVerticalSeam(SeamCarver sc) {
         Picture picture = SCUtility.toEnergyPicture(sc);
         int[] verticalSeam = sc.findVerticalSeam();
-        for(int i=0;i<verticalSeam.length;i++)
-        System.out.println(verticalSeam[i]);
-       // Picture overlay = SCUtility.seamOverlay(picture, false, verticalSeam);
-       // overlay.show();
+        Picture overlay = SCUtility.seamOverlay(picture, false, verticalSeam);
+        overlay.show();
     }
 
     public static void main(String[] args) {
@@ -46,19 +40,6 @@ public class ShowSeams {
 
         StdOut.printf("Displaying vertical seam calculated.\n");
         showVerticalSeam(sc);
-        
-       /* for (int j = 0; j < sc.height(); j++) {
-          for (int i = 0; i < sc.width(); i++)
-              StdOut.printf("%.2f ", sc.energyArray[i][j]);
-          StdOut.println();
-        }
-        System.out.println("Value is" +sc.energyArray[0][sc.height()-1]);
-       
-          for (int j = 0; j < sc.height(); j++) {
-            for (int i = 0; i < sc.width(); i++)
-                StdOut.printf("%d ", sc.pathArray[i][j]);
-            StdOut.println();
-        }*/
 
     }
 

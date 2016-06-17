@@ -1,35 +1,46 @@
 import java.awt.Color;
 
 import edu.princeton.cs.algs4.Picture;
-
+/*
+ * Only Picture datastructure is having Cartesian coordinates all other
+ * data structures are using normal 2d indices
+ */
 public class SeamCarver {
   private Picture picture;  
+  private int[][] redColorPicture;
+  private int[][] greenColorPicture;
+  private int[][] blueColorPicture;
+  private boolean pictureModified = false;
   private double[][] energyArray;
   private int[][] pathArray;
-  private boolean originalPicture = true;
-  private int[] topologicallySorted;
+  private boolean pictureTransposed = false;
 
   // create a seam carver object based on the given picture
   public SeamCarver(Picture picture) {
     if (picture == null)
       throw new java.lang.NullPointerException();
     this.picture = new Picture(picture); //for immutability
+    
+    redColorPicture   = new int[this.height()][this.width()];
+    greenColorPicture = new int[this.height()][this.width()];
+    blueColorPicture  = new int[this.height()][this.width()];
+    
+    for(int i=0;i<this.height();i++)
+      for(int j=0;j<this.width();j++){
+        redColorPicture[i][j]   = picture.get(j, i).getRed();
+        greenColorPicture[i][j] = picture.get(j, i).getGreen();
+        blueColorPicture[i][j]  = picture.get(j, i).getBlue();
+      }
   }
 
   // current picture
   public Picture picture() {
-    if (!originalPicture) {
-      transpose();
-      originalPicture = true;
-    }
-    Picture p = new Picture(this.width, this.height);
-    for (int i = 0; i < this.width; i++)
-      for (int j = 0; j < this.height; j++) {
-        if (this.picture[i][j] == null)
-          System.out.println("null is" + i + j);
-        p.set(i, j, this.picture[i][j]);
-      }
-    return p;
+    if(pictureModified==true) //if picture is modified(seam removed) change the picture
+      for(int i=0;i<this.height();i++)
+        for(int j=0;j<this.width();j++)
+          this.picture.set(j, i, new Color(redColorPicture[i][j],
+              greenColorPicture[i][j],blueColorPicture[i][j]));
+    return this.picture;
   }
 
   // width of current picture
@@ -62,11 +73,11 @@ public class SeamCarver {
   private double centralXDifference(int x, int y, char color) {
     switch (color) {
     case 'R':
-      return this.picture.get(x + 1,y).getRed() - this.picture.get(x - 1,y).getRed();      
+      return this.redColorPicture[y+1][x] - this.redColorPicture[y-1][x];      
     case 'B':
-      return this.picture.get(x + 1,y).getBlue() - this.picture.get(x - 1,y).getBlue();
+      return this.blueColorPicture[y+1][x] - this.blueColorPicture[y-1][x];
     case 'G':
-      return this.picture.get(x + 1,y).getGreen() - this.picture.get(x - 1,y).getGreen();
+      return this.greenColorPicture[y+1][x] - this.greenColorPicture[y-1][x];
     default:
       break;
     }
@@ -76,11 +87,11 @@ public class SeamCarver {
   private double centralYDifference(int x, int y, char color) {
     switch (color) {
     case 'R':
-      return this.picture.get(x,y + 1).getRed() - this.picture.get(x,y - 1).getRed();
+      return this.redColorPicture[y][x+1] - this.redColorPicture[y][x-1];
     case 'B':
-      return this.picture.get(x,y + 1).getBlue() - this.picture.get(x,y - 1).getBlue();
+      return this.blueColorPicture[y][x+1] - this.blueColorPicture[y][x-1];
     case 'G':
-      return this.picture.get(x,y + 1).getGreen() - this.picture.get(x,y - 1).getGreen();
+      return this.greenColorPicture[y][x+1] - this.greenColorPicture[y][x-1];
     default:
       break;
     }
@@ -89,142 +100,64 @@ public class SeamCarver {
 
   public int[] findHorizontalSeam() // sequence of indices for horizontal seam
   {
-    if (originalPicture) {
+    if (this.pictureTransposed==false) {
       transpose();
-      originalPicture = false;
+      pictureTransposed = true;
     }
 
     return findSeam();
 
   }
 
-  private void transpose() {
-    int height = this.height();
-    int width = this.width();
-    Color[][] p = new Color[height][width];
-
-    for (int i = 0; i < this.height(); i++) {
-      for (int j = 0; j < this.width(); j++)
-        p[i][j] = this.picture[j][i];
-    }
-
-    this.picture = p;
-    this.height = width;
-    this.width = height;
+  private void transpose() { 
+    int[][] tempRedColor = new int[this.redColorPicture[0].length][this.redColorPicture.length];
+    int[][] tempGreenColor = new int[this.redColorPicture[0].length][this.redColorPicture.length];
+    int[][] tempBlueColor = new int[this.redColorPicture[0].length][this.redColorPicture.length];
+    
+    for (int i = 0; i < this.redColorPicture.length; i++) {
+      for (int j = 0; j <this.redColorPicture[0].length; j++){
+        tempRedColor[j][i] = this.redColorPicture[i][j];
+        tempGreenColor[j][i] = this.greenColorPicture[i][j];
+        tempBlueColor[j][i] = this.blueColorPicture[i][j];
+      }      
+    }   
+    this.redColorPicture = tempRedColor;
+    this.greenColorPicture = tempGreenColor;
+    this.blueColorPicture = tempRedColor;
   }
 
   // sequence of indices for vertical seam
   public int[] findVerticalSeam() {
-    if (!originalPicture) {
+    if (this.pictureTransposed==true) {
       transpose();
-      originalPicture = true;
+      this.pictureTransposed= true;
     }
-
-    return findSeam();
+       return findSeam();
 
   }
 
   private int[] findSeam() {
-    energyArray = new double[this.width()][this.height()];
-    pathArray = new int[this.width()][this.height()];
-    /*
-     * for (int i = 0; i < this.width(); i++) {
-     
-      for (int j = 0; j < this.height(); j++)
-        energyArray[i][j] = Double.POSITIVE_INFINITY;
-    }
-
-    for (int i = 0; i < this.width(); i++) {
-      energyArray[i][0] = this.energy(i, 0); // Assigns first row = 1000
-    }
-
-    fillEnergyMatrixDynamically();
-    int minColumnPosition = findMinScorePosition();
-    int[] seam = seamPath(minColumnPosition);
-    this.energyArray = null;
-    this.pathArray = null;
-    return seam;
-    */
-    /*
-     * Filling corners with energy score =1000, this is to make sure the
-     * energy of corners is always greater than the internal pixel energy
-     */
+    energyArray = new double[this.height()][this.width()];
+    pathArray = new int[this.height()][this.width()];
+ 
+  //  System.out.println(this.energyArray[1][4]);
+  //  System.out.println(this.redColorPicture[0][5]);
+  //  System.out.println(this.energy(4, 1));
+    
     for (int i = 0; i < this.height(); i++) {
-      energyArray[i][0] = 1000;  //Top row
-      energyArray[i][this.width()-1] = 1000; //Bottom Row
-    }
-    for (int j = 0; j < this.height(); j++) {
-      energyArray[0][j] = 1000; //Left Column
-      energyArray[this.height()-1][j] = 1000; //Right Column
-    }
-    for (int i = 1; i < this.height(); i++) {
-      for (int j = 1; j < this.height(); j++) {
-        energyArray[i][j] = this.energy(i, j);// Fill internal pixels
+      for (int j = 0; j < this.width(); j++) {
+        energyArray[i][j] = this.energy(j, i);
       }
     }
     
-    createTopologicallySortedArray();
-  }
-  
-  private void createTopologicallySortedArray(){
     TopologicalSort topologicalSort = new TopologicalSort(this.energyArray);
-    int[] sortedList = topologicalSort.getSortedList();
-  }
-
-  private int findMinScorePosition() {
-    int pos = 0;
-    double minVal = energyArray[0][this.height() - 1];
-    for (int i = 1; i < this.width() - 1; i++) {
-      if (minVal > energyArray[i][this.height() - 1]) {
-        minVal = energyArray[i][this.height() - 1];
-        pos = i;
-      }
-    }
-    return pos;
-  }
-
-  private int[] seamPath(int pos) {
-    int[] seam = new int[this.height()];
-    int j = this.height() - 1;
-
-    while (j >= 0) {
-      seam[j] = pos;
-      pos = pathArray[pos][j];
-      j = j - 1;
-    }
-    return seam;
-  }
-
-  private void fillEnergyMatrixDynamically() {
-    for (int i = 0; i < this.height() - 1; i++) {
-      for (int j = 0; j < this.width(); j++) {
-        if (updateScore(j - 1, i + 1, energyArray[j][i]))
-          pathArray[j - 1][i + 1] = j;
-        if (updateScore(j, i + 1, energyArray[j][i]))
-          pathArray[j][i + 1] = j;
-        if (updateScore(j + 1, i + 1, energyArray[j][i]))
-          pathArray[j + 1][i + 1] = j;
-      }
-    }
-  }
-
-  private boolean updateScore(int i, int j, double score) {
-    if (i > -1 && i < this.width()) {
-      if (energyArray[i][j] > score + this.energy(i, j)) {
-        energyArray[i][j] = score + this.energy(i, j);
-        return true;
-      }
-    }
-    return false;
-  }
-
+    int[] sortedList = topologicalSort.getShortestPath();
+    return sortedList;
+  }  
+  
   public void removeHorizontalSeam(int[] seam) // remove horizontal seam from current picture
   {
 
-    if (originalPicture) {
-      transpose();
-      originalPicture = false;
-    }
     if (invalidSeam(seam))
       throw new java.lang.IllegalArgumentException();
     removeSeam(seam);
@@ -245,10 +178,6 @@ public class SeamCarver {
     if (invalidSeam(seam))
       throw new java.lang.IllegalArgumentException();
 
-    if (!originalPicture) {
-      transpose();
-      originalPicture = true;
-    }
     removeSeam(seam);
   }
 
@@ -259,17 +188,17 @@ public class SeamCarver {
       for (int i = 0, k = 0; i < this.width(); i++) {
         if (i != seam[j]) {
 
-          p[k][j] = this.picture[i][j];
+       //   p[k][j] = this.picture[i][j];
           k++;
         }
       }
     }
-    this.picture = p;
-    this.width = this.width() - 1;
+   // this.picture = p;
+  //  this.width = this.width() - 1;
   }
 
   public static void main(String[] args) {
-    // SeamCarver s= new SeamCarver();
+     //SeamCarver s= new SeamCarver();
 
   }
 }
